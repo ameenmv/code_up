@@ -2,9 +2,9 @@ import axios from 'axios';
 
 // Create an Axios instance with base configuration
 const api = axios.create({
-  // Since we have a proxy configured in vite.config.js,
-  // we can just use the relative URL '/api'
-  baseURL: '/api',
+  // Use VITE_API_URL from environment variables if available (for production like Netlify),
+  // otherwise fallback to '/api' which uses the Vite proxy locally.
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true, // Important for session-based auth
   headers: {
     'Content-Type': 'application/json',
