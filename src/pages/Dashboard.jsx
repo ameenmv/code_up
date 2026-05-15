@@ -80,13 +80,13 @@ export default function Dashboard() {
               <div className="flex flex-col sm:flex-row h-full">
                 <div className="w-full sm:w-48 h-40 sm:h-auto shrink-0 relative overflow-hidden bg-dark-900 flex items-center justify-center text-white/20">
                   {course.thumbnail ? (
-                    <img src={course.thumbnail} alt={course.title?.en || course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={course.thumbnail} alt={typeof course.title === 'object' ? (course.title?.en || course.title?.ar) : course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : <BookOpen className="w-10 h-10" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-dark-950 to-transparent sm:hidden" />
                 </div>
                 <div className="p-6 flex flex-col justify-center flex-grow">
-                  <h3 className="font-bold text-lg mb-2 group-hover:text-brand-purple transition-colors">{course.title?.en || course.title || 'Course'}</h3>
-                  <p className="text-sm text-white/50 mb-4 line-clamp-2">{course.short_description?.en || course.short_description || 'No description available'}</p>
+                  <h3 className="font-bold text-lg mb-2 group-hover:text-brand-purple transition-colors">{typeof course.title === 'object' ? (course.title?.en || course.title?.ar) : (course.title || 'Course')}</h3>
+                  <p className="text-sm text-white/50 mb-4 line-clamp-2">{typeof course.short_description === 'object' ? (course.short_description?.en || course.short_description?.ar) : (course.short_description || 'No description available')}</p>
                   <div className="mt-auto space-y-2">
                     <div className="flex justify-between text-xs text-white/70">
                       <span>Progress</span>

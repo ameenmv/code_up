@@ -68,7 +68,7 @@ export default function Classroom() {
               <Link to={`/courses/${course.id}`} className="text-sm text-brand-cyan hover:text-brand-cyan/80 flex items-center gap-2 mb-4 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Back to Course
               </Link>
-              <h2 className="font-bold text-lg leading-tight text-white mb-2">{course.title?.en || course.title}</h2>
+              <h2 className="font-bold text-lg leading-tight text-white mb-2">{typeof course.title === 'object' ? (course.title?.en || course.title?.ar) : course.title}</h2>
               
               <div className="flex items-center gap-2 mt-4">
                 <div className="w-full h-1.5 bg-dark-950 rounded-full overflow-hidden">
@@ -98,7 +98,7 @@ export default function Classroom() {
                     </div>
                     <div className="flex-grow">
                       <div className={`text-sm font-medium ${isActive ? 'text-white font-semibold' : 'text-white/70'}`}>
-                        {idx + 1}. {lesson.title?.en || lesson.title}
+                        {idx + 1}. {typeof lesson.title === 'object' ? (lesson.title?.en || lesson.title?.ar) : lesson.title}
                       </div>
                       <div className="text-xs text-white/40 mt-1 flex items-center gap-1.5">
                         <FileText className="w-3 h-3" /> {lesson.duration_minutes || 0} min
@@ -124,7 +124,7 @@ export default function Classroom() {
                 <span className="text-white/70 font-normal">Lesson {activeLesson.order || 1}</span>
               </div>
 
-              <h1 className="text-3xl lg:text-4xl font-bold mb-8">{activeLesson.title?.en || activeLesson.title}</h1>
+              <h1 className="text-3xl lg:text-4xl font-bold mb-8">{typeof activeLesson.title === 'object' ? (activeLesson.title?.en || activeLesson.title?.ar) : activeLesson.title}</h1>
 
               {/* Video Player Mockup / Iframe container */}
               <div className="aspect-video w-full rounded-2xl overflow-hidden glass border border-white/10 mb-8 relative group shadow-card">
@@ -152,7 +152,7 @@ export default function Classroom() {
               <article className="prose prose-invert prose-brand max-w-none">
                 <h3 className="text-2xl font-semibold mb-4 text-white">Lesson Notes</h3>
                 <p className="text-white/70 leading-relaxed mb-6 text-lg">
-                  {activeLesson.content?.en || activeLesson.content || "No detailed notes provided for this lesson yet."}
+                  {typeof activeLesson.content === 'object' ? (activeLesson.content?.en || activeLesson.content?.ar) : (activeLesson.content || "No detailed notes provided for this lesson yet.")}
                 </p>
               </article>
 

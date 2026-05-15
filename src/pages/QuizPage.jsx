@@ -158,7 +158,7 @@ export default function QuizPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3 glass px-4 py-2 rounded-xl border border-white/10">
           <BrainCircuit className="w-5 h-5 text-brand-purple" />
-          <span className="font-semibold text-sm">{quizData.title?.en || quizData.title || 'Quiz'}</span>
+          <span className="font-semibold text-sm">{typeof quizData.title === 'object' ? (quizData.title?.en || quizData.title?.ar) : (quizData.title || 'Quiz')}</span>
         </div>
         <div className="flex items-center gap-2 text-brand-cyan font-mono glass px-4 py-2 rounded-xl border border-white/10">
           <Clock className="w-5 h-5" />

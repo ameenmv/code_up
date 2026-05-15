@@ -97,7 +97,7 @@ export default function Courses() {
                         : 'text-white/60 hover:bg-white/5 hover:text-white'
                     }`}
                   >
-                    <span>{cat.name?.en || cat.name}</span>
+                    <span>{typeof cat.name === 'object' ? (cat.name?.en || cat.name?.ar) : cat.name}</span>
                     <span className="text-xs opacity-50">{cat.courses_count || 0}</span>
                   </button>
                 ))}
