@@ -40,10 +40,8 @@ export function AuthProvider({ children }) {
 
   const register = async (data) => {
     const response = await authService.register(data);
-    const userData = await authService.getCurrentUser();
-    setUser(userData);
-    setIsAuthenticated(true);
-    return userData;
+    // Don't auto-login here, let the user redirect to login page
+    return response;
   };
 
   const logout = async () => {

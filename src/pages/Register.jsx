@@ -19,7 +19,7 @@ export default function Register() {
     setError(null);
     try {
       await register({ username, email, password });
-      navigate('/dashboard');
+      navigate('/login');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
