@@ -1,16 +1,47 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, BookOpen, Star, Play, CheckCircle2, Lock, ArrowLeft, Award } from 'lucide-react';
-import { COURSES, LESSONS } from '../data/mockData';
+import { Clock, BookOpen, Star, Play, CheckCircle2, Lock, ArrowLeft, Award, Loader2 } from 'lucide-react';
+import { coursesService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function CourseDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   
-  // Convert ID to number since params are strings
-  const courseId = parseInt(id || '1', 10);
-  const course = COURSES.find(c => c.id === courseId) || COURSES[0];
+  const [course, setCourse] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    coursesService.getCourseDetails(id)
+      .then(setCourse)
+      .catch(err => setError(err.message))
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  const handleEnroll = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    setIsEnrolling(true);
+    try {
+      await coursesService.enrollCourse(id);
+      navigate(`/classroom/${id}`);
+    } catch (err) {
+      console.error('Failed to enroll:', err);
+      // Fallback navigate to classroom if already enrolled
+      navigate(`/classroom/${id}`);
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-brand-cyan" /></div>;
+  if (error || !course) return <div className="min-h-screen flex items-center justify-center text-white/50">Failed to load course details.</div>;
 
   return (
     <div className="min-h-screen pt-16">
@@ -99,9 +130,9 @@ export default function CourseDetail() {
                   )}
                 </div>
 
-                <Link to={`/classroom/${course.id}`} className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-brand-violet to-brand-indigo hover:from-brand-purple hover:to-brand-violet transition-all duration-300 shadow-glow-sm hover:shadow-glow-purple flex items-center justify-center gap-2 mb-4">
-                  Enroll Now
-                </Link>
+                <button onClick={handleEnroll} disabled={isEnrolling} className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-brand-violet to-brand-indigo hover:from-brand-purple hover:to-brand-violet transition-all duration-300 shadow-glow-sm hover:shadow-glow-purple flex items-center justify-center gap-2 mb-4 disabled:opacity-50">
+                  {isEnrolling ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enroll Now'}
+                </button>
                 <p className="text-center text-xs text-white/40 mb-6">Full lifetime access. Certificate of completion included.</p>
 
                 <div className="space-y-4 pt-6 border-t border-white/10">
@@ -133,7 +164,7 @@ export default function CourseDetail() {
             <p className="text-white/50 mb-10">Step-by-step roadmap to master {course.title.en}</p>
 
             <div className="space-y-3">
-              {LESSONS.map((lesson, idx) => (
+              {(course.lessons || []).map((lesson, idx) => (
                 <div 
                   key={lesson.id} 
                   className={`glass p-5 rounded-2xl border flex items-center justify-between transition-all ${

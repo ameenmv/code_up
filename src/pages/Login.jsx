@@ -8,16 +8,22 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simulate API call
     setIsLoading(true);
-    setTimeout(() => {
-      login();
-      setIsLoading(false);
+    setError(null);
+    try {
+      await login({ email, password });
       navigate('/dashboard');
-    }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,6 +50,11 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center">
+                {error}
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-white/70 uppercase tracking-wider ml-1">Email</label>
               <div className="relative group">
@@ -52,6 +63,9 @@ export default function Login() {
                 </div>
                 <input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="student@codeup.com"
                   className="w-full pl-11 pr-4 py-3.5 bg-dark-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-purple focus:border-transparent outline-none transition-all text-white placeholder-white/20"
                 />
@@ -69,6 +83,9 @@ export default function Login() {
                 </div>
                 <input 
                   type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   placeholder="••••••••"
                   className="w-full pl-11 pr-4 py-3.5 bg-dark-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-purple focus:border-transparent outline-none transition-all text-white placeholder-white/20"
                 />

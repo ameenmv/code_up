@@ -1,10 +1,15 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Brain, Award, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { CATEGORIES, COURSES } from '../data/mockData';
+import { coursesService } from '../services/api';
 
 export default function Home() {
-  const featuredCourses = COURSES.filter((c) => c.level === 'beginner').slice(0, 3);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    coursesService.getCategories().then(setCategories).catch(console.error);
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -143,7 +148,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {CATEGORIES.map((cat, i) => (
+            {categories.map((cat, i) => (
               <Link key={cat.id} to={`/courses?category=${cat.slug}`}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}

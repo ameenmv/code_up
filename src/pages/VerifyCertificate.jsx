@@ -1,21 +1,28 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, CheckCircle, ShieldCheck, Award, Calendar, XCircle } from 'lucide-react';
-import { CERTIFICATES } from '../data/mockData';
+import { Search, CheckCircle, ShieldCheck, Award, Calendar, XCircle, Loader2 } from 'lucide-react';
+import { certificatesService } from '../services/api';
 
 export default function VerifyCertificate() {
   const [searchCode, setSearchCode] = useState('');
   const [result, setResult] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleVerify = (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
     if (!searchCode.trim()) return;
     
     setHasSearched(true);
-    // Mock check
-    const found = CERTIFICATES.find(c => c.certificate_code.toLowerCase() === searchCode.toLowerCase());
-    setResult(found || null);
+    setIsLoading(true);
+    try {
+      const found = await certificatesService.verifyCertificate(searchCode);
+      setResult(found);
+    } catch (err) {
+      setResult(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,14 +54,19 @@ export default function VerifyCertificate() {
           />
           <button 
             type="submit"
-            className="absolute right-2 top-2 bottom-2 px-6 rounded-xl font-bold bg-gradient-to-r from-brand-violet to-brand-cyan hover:opacity-90 transition-opacity flex items-center gap-2"
+            disabled={isLoading}
+            className="absolute right-2 top-2 bottom-2 px-6 rounded-xl font-bold bg-gradient-to-r from-brand-violet to-brand-cyan hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
           >
-            <Search className="w-5 h-5" />
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
             <span className="hidden sm:inline">Verify</span>
           </button>
         </form>
 
-        {hasSearched && (
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="w-10 h-10 animate-spin text-brand-cyan" />
+          </div>
+        ) : hasSearched && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -74,7 +86,7 @@ export default function VerifyCertificate() {
                 <div className="space-y-6 relative z-10">
                   <div>
                     <div className="text-sm text-white/50 mb-1">Student</div>
-                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">Ahmed Hassan</div>
+                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">{result.user?.username || 'Certified Student'}</div>
                   </div>
                   
                   <div>

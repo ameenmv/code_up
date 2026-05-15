@@ -1,16 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, BookOpen } from 'lucide-react';
-import { COURSES, CATEGORIES } from '../data/mockData';
+import { Search, Filter, BookOpen, Loader2 } from 'lucide-react';
+import { coursesService } from '../services/api';
 import CourseCard from '../components/courses/CourseCard';
 
 export default function Courses() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeLevel, setActiveLevel] = useState('all');
+  const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      coursesService.getAllCourses(),
+      coursesService.getCategories()
+    ]).then(([coursesData, categoriesData]) => {
+      setCourses(coursesData);
+      setCategories(categoriesData);
+    }).catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const filteredCourses = useMemo(() => {
-    return COURSES.filter((course) => {
+    return courses.filter((course) => {
       const matchSearch = course.title.en.toLowerCase().includes(search.toLowerCase());
       const matchCat = activeCategory === 'all' || course.category.slug === activeCategory;
       const matchLevel = activeLevel === 'all' || course.level === activeLevel;
@@ -73,7 +87,7 @@ export default function Courses() {
                 >
                   All Categories
                 </button>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.slug)}
@@ -83,8 +97,8 @@ export default function Courses() {
                         : 'text-white/60 hover:bg-white/5 hover:text-white'
                     }`}
                   >
-                    <span>{cat.name.en}</span>
-                    <span className="text-xs opacity-50">{cat.courses_count}</span>
+                    <span>{cat.name?.en || cat.name}</span>
+                    <span className="text-xs opacity-50">{cat.courses_count || 0}</span>
                   </button>
                 ))}
               </div>
@@ -124,14 +138,20 @@ export default function Courses() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <AnimatePresence mode="popLayout">
-              {filteredCourses.map((course, index) => (
-                <CourseCard key={course.id} course={course} index={index} />
-              ))}
-            </AnimatePresence>
+            {isLoading ? (
+              <div className="col-span-full flex justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-brand-cyan" />
+              </div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {filteredCourses.map((course, index) => (
+                  <CourseCard key={course.id} course={course} index={index} />
+                ))}
+              </AnimatePresence>
+            )}
           </div>
 
-          {filteredCourses.length === 0 && (
+          {!isLoading && filteredCourses.length === 0 && (
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 

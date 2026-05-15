@@ -1,17 +1,42 @@
 import { motion } from 'framer-motion';
-import { Users, BookOpen, Award, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, BookOpen, Award, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { ANALYTICS } from '../data/mockData';
+import { analyticsService } from '../services/api';
 import { Navigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  
+  const [analytics, setAnalytics] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      analyticsService.getOverview(),
+      analyticsService.getHardestCourses(),
+      analyticsService.getCompletionTime()
+    ]).then(([overview, hardest, completion]) => {
+      // Structure based on mock data shape to minimize UI changes
+      setAnalytics({ 
+        total_students: overview.total_students || 0,
+        total_courses: overview.total_courses || 0,
+        total_enrollments: overview.total_enrollments || 0,
+        total_certificates: overview.total_certificates || 0,
+        hardest_courses: hardest || [], 
+        completion_times: completion || [] 
+      });
+    }).catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, []);
+
   // Basic admin guard mock
   if (user?.role !== 'admin' && user?.role !== 'student') { 
     // Allowing student to view it just for demo purposes right now
     // return <Navigate to="/dashboard" />;
   }
+
+  if (isLoading) return <div className="min-h-screen pt-24 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-brand-cyan" /></div>;
+  if (!analytics) return <div className="min-h-screen pt-24 flex items-center justify-center text-white/50">Failed to load analytics.</div>;
 
   return (
     <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto w-full">
@@ -28,10 +53,10 @@ export default function AdminDashboard() {
       {/* Top Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label: 'Total Students', value: ANALYTICS.total_students, icon: Users, color: 'text-brand-cyan', bg: 'bg-brand-cyan/20' },
-          { label: 'Active Courses', value: ANALYTICS.total_courses, icon: BookOpen, color: 'text-brand-purple', bg: 'bg-brand-purple/20' },
-          { label: 'Total Enrollments', value: ANALYTICS.total_enrollments, icon: TrendingUp, color: 'text-brand-emerald', bg: 'bg-brand-emerald/20' },
-          { label: 'Certificates Issued', value: ANALYTICS.total_certificates, icon: Award, color: 'text-yellow-500', bg: 'bg-yellow-500/20' },
+          { label: 'Total Students', value: analytics.total_students, icon: Users, color: 'text-brand-cyan', bg: 'bg-brand-cyan/20' },
+          { label: 'Active Courses', value: analytics.total_courses, icon: BookOpen, color: 'text-brand-purple', bg: 'bg-brand-purple/20' },
+          { label: 'Total Enrollments', value: analytics.total_enrollments, icon: TrendingUp, color: 'text-brand-emerald', bg: 'bg-brand-emerald/20' },
+          { label: 'Certificates Issued', value: analytics.total_certificates, icon: Award, color: 'text-yellow-500', bg: 'bg-yellow-500/20' },
         ].map((stat, i) => (
           <motion.div 
             key={i}
@@ -60,7 +85,7 @@ export default function AdminDashboard() {
           <p className="text-sm text-white/50 mb-6">Courses with the highest quiz fail rates</p>
           
           <div className="space-y-6">
-            {ANALYTICS.hardest_courses.map((item, i) => (
+            {analytics.hardest_courses.map((item, i) => (
               <div key={i}>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="font-semibold">{item.course}</span>
@@ -86,7 +111,7 @@ export default function AdminDashboard() {
           <p className="text-sm text-white/50 mb-6">Average days students take to finish a course</p>
           
           <div className="space-y-4">
-            {ANALYTICS.completion_times.map((item, i) => (
+            {analytics.completion_times.map((item, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-dark-900/50 rounded-xl border border-white/5">
                 <div className="text-sm font-semibold max-w-[200px] truncate">{item.course}</div>
                 <div className="flex items-center gap-2">

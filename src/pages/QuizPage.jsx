@@ -1,21 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BrainCircuit, Clock, HelpCircle, CheckCircle2, XCircle, ArrowRight, RotateCcw } from 'lucide-react';
-import { QUIZ_QUESTIONS } from '../data/mockData';
+import { BrainCircuit, Clock, HelpCircle, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2 } from 'lucide-react';
+import { quizzesService } from '../services/api';
 
 export default function QuizPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   
+  const [quizData, setQuizData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
+  const [result, setResult] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentQuestion = QUIZ_QUESTIONS[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === QUIZ_QUESTIONS.length - 1;
-  const progress = ((currentQuestionIndex + 1) / QUIZ_QUESTIONS.length) * 100;
+  useEffect(() => {
+    quizzesService.getQuizDetails(id)
+      .then(setQuizData)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-dark-950"><Loader2 className="w-10 h-10 animate-spin text-brand-cyan" /></div>;
+  if (!quizData) return <div className="min-h-screen flex items-center justify-center bg-dark-950 text-white/50">Quiz not found.</div>;
+
+  const questions = quizData.questions || [];
+  const currentQuestion = questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   const handleSelectChoice = (choiceId) => {
     if (isSubmitted) return;
@@ -34,19 +48,30 @@ export default function QuizPage() {
     }
   };
 
-  const submitQuiz = () => {
-    let newScore = 0;
-    QUIZ_QUESTIONS.forEach(q => {
-      const correctChoice = q.choices.find(c => c.is_correct);
-      if (selectedAnswers[q.id] === correctChoice.id) {
-        newScore += 1;
-      }
-    });
-    setScore(newScore);
-    setIsSubmitted(true);
+  const submitQuiz = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await quizzesService.submitQuiz(id, selectedAnswers);
+      setResult(response);
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Failed to submit quiz', err);
+      // Fallback if backend does not return full result payload
+      let newScore = 0;
+      questions.forEach(q => {
+        const correctChoice = q.choices.find(c => c.is_correct);
+        if (correctChoice && selectedAnswers[q.id] === correctChoice.id) {
+          newScore += 1;
+        }
+      });
+      setResult({ score: newScore, total: questions.length });
+      setIsSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const scorePercentage = (score / QUIZ_QUESTIONS.length) * 100;
+  const scorePercentage = result ? (result.score / result.total) * 100 : 0;
   const passed = scorePercentage >= 70;
 
   if (isSubmitted) {
@@ -79,10 +104,10 @@ export default function QuizPage() {
 
           <div className="bg-dark-900 border border-white/5 rounded-2xl p-6 text-left mb-8 max-h-96 overflow-y-auto custom-scrollbar space-y-6">
             <h3 className="font-bold text-lg border-b border-white/10 pb-4">Review Answers</h3>
-            {QUIZ_QUESTIONS.map((q, idx) => {
+            {questions.map((q, idx) => {
               const selected = selectedAnswers[q.id];
-              const correct = q.choices.find(c => c.is_correct).id;
-              const isRight = selected === correct;
+              const correctChoice = q.choices.find(c => c.is_correct);
+              const isRight = correctChoice ? selected === correctChoice.id : false;
               
               return (
                 <div key={q.id} className="space-y-2">
@@ -133,7 +158,7 @@ export default function QuizPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3 glass px-4 py-2 rounded-xl border border-white/10">
           <BrainCircuit className="w-5 h-5 text-brand-purple" />
-          <span className="font-semibold text-sm">Python Basics Quiz</span>
+          <span className="font-semibold text-sm">{quizData.title?.en || quizData.title || 'Quiz'}</span>
         </div>
         <div className="flex items-center gap-2 text-brand-cyan font-mono glass px-4 py-2 rounded-xl border border-white/10">
           <Clock className="w-5 h-5" />
@@ -144,7 +169,7 @@ export default function QuizPage() {
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="flex justify-between text-xs text-white/50 font-bold mb-2 uppercase tracking-wider">
-          <span>Question {currentQuestionIndex + 1} of {QUIZ_QUESTIONS.length}</span>
+          <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <div className="h-2 w-full bg-dark-900 rounded-full overflow-hidden border border-white/5">
@@ -199,10 +224,10 @@ export default function QuizPage() {
           <div className="mt-auto flex justify-end pt-6 border-t border-white/5">
             <button 
               onClick={handleNext}
-              disabled={!selectedAnswers[currentQuestion.id]}
+              disabled={!selectedAnswers[currentQuestion?.id] || isSubmitting}
               className="px-8 py-4 rounded-xl font-bold text-lg bg-white text-dark-950 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
             >
-              {isLastQuestion ? 'Submit Quiz' : 'Next Question'}
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLastQuestion ? 'Submit Quiz' : 'Next Question')}
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

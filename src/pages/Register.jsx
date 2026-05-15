@@ -5,18 +5,26 @@ import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 
 export default function Register() {
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      login();
-      setIsLoading(false);
+    setError(null);
+    try {
+      await register({ username, email, password });
       navigate('/dashboard');
-    }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,6 +51,11 @@ export default function Register() {
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center">
+                {error}
+              </div>
+            )}
             
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-white/70 uppercase tracking-wider ml-1">Full Name</label>
@@ -52,6 +65,9 @@ export default function Register() {
                 </div>
                 <input 
                   type="text" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
                   placeholder="Omar Ahmed"
                   className="w-full pl-11 pr-4 py-3.5 bg-dark-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all text-white placeholder-white/20"
                 />
@@ -66,6 +82,9 @@ export default function Register() {
                 </div>
                 <input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="student@codeup.com"
                   className="w-full pl-11 pr-4 py-3.5 bg-dark-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all text-white placeholder-white/20"
                 />
@@ -80,6 +99,9 @@ export default function Register() {
                 </div>
                 <input 
                   type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   placeholder="••••••••"
                   className="w-full pl-11 pr-4 py-3.5 bg-dark-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all text-white placeholder-white/20"
                 />
