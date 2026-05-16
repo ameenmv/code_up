@@ -2,9 +2,10 @@ import axios from 'axios';
 
 // Create an Axios instance with base configuration
 const api = axios.create({
-  // Use VITE_API_URL from environment variables if available (for production like Netlify),
-  // otherwise fallback to '/api' which uses the Vite proxy locally.
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  // We use '/api' for both development and production.
+  // In development, Vite proxies to localhost:5000.
+  // In production, Netlify proxies to Vercel via netlify.toml.
+  baseURL: '/api',
   withCredentials: true, // Important for session-based auth
   headers: {
     'Content-Type': 'application/json',
